@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Duty log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6f8;--surface:#ffffff;--ink:#17233b;--muted:#5d6b82;--line:#d9e0e8;
+  --accent:#0f766e;--accent-ink:#ffffff;--half:#b45f06;--full:#0f766e;--danger:#b42318;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1624;--surface:#172033;--ink:#e8edf5;--muted:#9aa8bf;--line:#2a3650;
+    --accent:#2dd4bf;--accent-ink:#06201d;--half:#f0a93b;--full:#2dd4bf;--danger:#f97066;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1624;--surface:#172033;--ink:#e8edf5;--muted:#9aa8bf;--line:#2a3650;
+  --accent:#2dd4bf;--accent-ink:#06201d;--half:#f0a93b;--full:#2dd4bf;--danger:#f97066;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.5 "Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:46rem;margin:0 auto;padding:1.25rem 1rem 3rem}
+h1{font-size:clamp(1.6rem,5vw,2.2rem);line-height:1.15;margin:.5rem 0 1.25rem;font-weight:700}
+h2{font-size:1.1rem;margin:0 0 .75rem;font-weight:700}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1rem;margin-bottom:1rem}
+.row{display:grid;gap:.9rem}
+@media (min-width:600px){.row{grid-template-columns:1fr 1.2fr;align-items:end}.loc{grid-column:1/-1}}
+label.lbl,.lbl{display:block;font-size:.9rem;color:var(--muted);margin-bottom:.35rem}
+input[type=date],input[type=text],input[type=tel]{width:100%;min-height:48px;padding:.6rem .8rem;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{display:flex;align-items:center;justify-content:center;gap:.5rem;min-height:48px;padding:.5rem;border:1px solid var(--line);border-radius:10px;background:var(--bg);cursor:pointer;font-weight:500}
+.seg input:checked+label{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);font-weight:700}
+.seg input:focus-visible+label,input[type=date]:focus-visible,input[type=text]:focus-visible,input[type=tel]:focus-visible,.wa:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;flex:none}
+.dot.full{background:var(--full);border:2px solid var(--full)}
+.dot.half{border:2px solid var(--half);background:linear-gradient(90deg,var(--half) 50%,transparent 50%)}
+.btn{min-height:48px;padding:.6rem 1.4rem;font:inherit;font-weight:700;color:var(--accent-ink);background:var(--accent);border:0;border-radius:10px;cursor:pointer;width:100%}
+@media (min-width:600px){.btn{width:auto;justify-self:start}}
+.msg{min-height:1.5rem;margin:.75rem 0 0;font-size:.95rem;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;text-align:center}
+.stats div{padding:.5rem .25rem}
+.stats b{display:block;font-size:1.6rem;line-height:1.2}
+.stats span{font-size:.85rem;color:var(--muted)}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:.7rem .5rem;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:.85rem;font-weight:500;color:var(--muted)}
+tr:last-child td{border-bottom:0}
+.type{display:inline-flex;align-items:center;gap:.5rem;white-space:nowrap}
+.day{color:var(--muted);font-size:.9rem}
+.del{min-width:44px;min-height:44px;font:inherit;color:var(--danger);background:transparent;border:1px solid var(--line);border-radius:10px;cursor:pointer}
+.empty{margin:0;color:var(--muted)}
+.muted{color:var(--muted)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.num{text-align:center;padding-left:.25rem;padding-right:.25rem}
+td.num{font-weight:700}
+:root{--head:#1f3a5f;--head-ink:#ffffff;--half-bg:#fdf0d8;--full-bg:#d9f2ee}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--head:#2b4a7a;--half-bg:#33280f;--full-bg:#0f3333}}
+:root[data-theme="dark"]{--head:#2b4a7a;--half-bg:#33280f;--full-bg:#0f3333}
+.wrap{border:1px solid var(--line);border-radius:12px}
+th{background:var(--head);color:var(--head-ink);font-weight:700;padding:.75rem .5rem}
+tr.half td{background:var(--half-bg)}
+tr.full td{background:var(--full-bg)}
+tr.half td:first-child{box-shadow:inset 4px 0 0 var(--half)}
+tr.full td:first-child{box-shadow:inset 4px 0 0 var(--full)}
+td:first-child,th:first-child{padding-left:.9rem}
+td:first-child{font-weight:700}
+.badge{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;font-weight:700;color:var(--accent-ink)}
+.badge.half{background:var(--half)}
+.badge.full{background:var(--full)}
+input[type=number]{width:100%;min-height:48px;padding:.6rem .8rem;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px}
+input[type=number]:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center}
+.rates{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;margin-top:.5rem}
+.bill-list{margin:0}
+.bill-list div{display:flex;justify-content:space-between;gap:1rem;padding:.6rem 0;border-bottom:1px solid var(--line)}
+.bill-list dt{color:var(--muted)}
+.bill-list dd{margin:0;font-weight:700;text-align:right}
+.bill-list .total{border-bottom:0;padding-top:.9rem;font-size:1.25rem}
+.bill-list .total dt{color:var(--ink);font-weight:700}
+.bill-list .total dd{color:var(--accent)}
+.del{min-width:30px;min-height:30px;width:30px;height:30px;padding:0;font-size:.75rem;line-height:1;border-radius:8px}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:1.25rem;max-width:min(22rem,calc(100vw - 2rem))}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+#cq{margin:0 0 1rem;font-weight:700}
+.dlg-actions{display:flex;gap:.6rem}
+.dlg-actions .btn{flex:1;width:auto}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:var(--danger);color:var(--accent-ink)}
+#settings{width:22rem}
+#pdf{margin-top:1rem}
+.acts{display:flex;gap:.35rem;justify-content:flex-end}
+.ed{min-width:30px;min-height:30px;width:30px;height:30px;padding:0;font:inherit;font-size:.85rem;line-height:1;color:var(--accent);background:transparent;border:1px solid var(--line);border-radius:8px;cursor:pointer}
+#editdlg{width:22rem}
+#editdlg h2{margin:0 0 .9rem;font-size:1.1rem}
+#editdlg input{margin-bottom:.9rem}
+#editdlg .msg{margin:-.3rem 0 .7rem}
+@media (max-width:420px){.loc-cell{min-width:3.5rem}.badge{width:26px;height:26px}.del,.ed{min-width:28px;min-height:28px;width:28px;height:28px}}
+td{font-size:.85rem}
+th{font-size:.78rem}
+th,td{padding-top:.55rem;padding-bottom:.55rem}
+td:first-child,th:first-child{padding-left:.7rem}
+.loc-cell{min-width:3.5rem}
+.badge{width:22px;height:22px;font-size:.78rem}
+.del,.ed{min-width:26px;min-height:26px;width:26px;height:26px;font-size:.7rem}
+.advform{display:grid;gap:.9rem;margin-top:.6rem}
+@media (min-width:600px){.advform{grid-template-columns:1fr 1fr auto;align-items:end}}
+#a-table .num{text-align:right;padding-right:.7rem}
+tfoot td{font-weight:700;background:var(--bg)}
+#adv summary,#rem summary{gap:.5rem}
+#r-clear{margin-top:.25rem}
+@media (min-width:600px){#rem .advform{grid-template-columns:1fr auto}}
+input[type=date],input[type=text],input[type=tel],input[type=number]{transition:border-color .2s,box-shadow .2s,background-color .2s}
+input[type=date]:focus,input[type=text]:focus,input[type=tel]:focus,input[type=number]:focus,#settings input.name:focus{outline:none;border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 24%,transparent)}
+#settings h2{margin:0 0 .9rem}
+#settings .dlg-actions{margin-top:1rem}
+#settings input.name{font-size:1rem;font-weight:400;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:.6rem .8rem;min-height:48px;margin-bottom:1rem}
+.who{margin:.25rem 0 0;text-align:center;font-size:1.3rem;font-weight:700;color:var(--accent)}
+td{transition:background-color .25s}
+tr.flash td{background:#ffe08a;color:#17233b}
+.top{display:flex;align-items:center;justify-content:flex-end;gap:.75rem}
+.sr{position:absolute;left:-9999px}
+.set{min-height:36px;padding:.3rem .85rem;font:inherit;font-size:.9rem;font-weight:700;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;cursor:pointer;white-space:nowrap}
+.loc-cell{word-break:break-word;min-width:5rem}
+.wa{display:flex;align-items:center;justify-content:center;min-height:48px;padding:.6rem 1.4rem;margin-top:.9rem;font-weight:700;text-decoration:none;color:#ffffff;background:#0a7468;border-radius:10px;cursor:pointer}
+.wa[aria-disabled="true"]{opacity:.5;pointer-events:none}
+@media (min-width:600px){.wa{display:inline-flex}}
+input.name{font-size:1.15rem;font-weight:700;background:transparent;border:0;border-bottom:2px solid var(--line);border-radius:0;padding:.4rem 0;min-height:44px}
+input.name:focus{border-bottom-color:var(--accent)}
+@media (max-width:420px){th,td{padding:.6rem .3rem}.day{display:block}}
+</style>
+</head>
+<body>
+<main>
+  <p class="who" id="who" hidden></p>
+  <div class="top"><h1 class="sr">Duty log</h1><button type="button" class="set" id="open-set">&#9881; Settings</button></div>
+
+  <section class="card" aria-labelledby="addh">
+    <h2 id="addh">Add duty</h2>
+    <form id="form" novalidate>
+      <div class="row">
+        <div>
+          <label class="lbl" for="date">Date</label>
+          <input type="date" id="date" required>
+        </div>
+        <div>
+          <span class="lbl" id="typelbl">Duty type</span>
+          <div class="seg" role="radiogroup" aria-labelledby="typelbl">
+            <input type="radio" name="type" id="t-full" value="full" checked>
+            <label for="t-full"><span class="dot full"></span>Full day</label>
+            <input type="radio" name="type" id="t-half" value="half">
+            <label for="t-half"><span class="dot half"></span>Half day</label>
+          </div>
+        </div>
+        <div class="loc">
+          <label class="lbl" for="loc">Location of duty</label>
+          <input type="text" id="loc" maxlength="80" autocomplete="off" required aria-required="true" placeholder="For example: Nandu Bhavan">
+        </div>
+        <button class="btn" type="submit" disabled>Save duty</button>
+      </div>
+      <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <dialog id="settings" aria-labelledby="sth">
+    <h2 id="sth">Settings</h2>
+    <label class="lbl" for="name">Your name</label>
+    <input type="text" class="name" id="name" maxlength="60" autocomplete="name" placeholder="Enter your name">
+    <div class="rates">
+      <div><label class="lbl" for="r-half">Half day (Rs.)</label><input type="number" id="r-half" min="0" step="1" inputmode="numeric"></div>
+      <div><label class="lbl" for="r-full">Full day (Rs.)</label><input type="number" id="r-full" min="0" step="1" inputmode="numeric"></div>
+    </div>
+  <div class="dlg-actions"><button type="button" class="btn" id="s-done">Done</button></div>
+  </dialog>
+
+  <section class="card" aria-label="Summary">
+    <div class="stats">
+      <div><b id="s-total">0</b><span>Total Duties</span></div>
+      <div><b id="s-full">0</b><span>Full days</span></div>
+      <div><b id="s-half">0</b><span>Half days</span></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="listh">
+    <h2 id="listh">All entries</h2>
+    <p class="empty" id="empty">No duty saved yet. Pick a date above and choose Save duty.</p>
+    <div class="wrap">
+      <table id="table" hidden>
+        <thead><tr><th>Date</th><th>Location</th><th class="num">Half Day</th><th class="num">Full Day</th><th><span class="sr" style="position:absolute;left:-9999px">Remove</span></th></tr></thead>
+        <tbody id="body"></tbody>
+      </table>
+    </div>
+  </section>
+  <details class="card" id="adv">
+    <summary>Advance amount <span class="muted" id="adv-sum"></span></summary>
+    <div class="advform">
+      <div><label class="lbl" for="a-date">Date</label><input type="date" id="a-date"></div>
+      <div><label class="lbl" for="a-amt">Amount (Rs.)</label><input type="number" id="a-amt" min="1" step="1" inputmode="numeric"></div>
+      <button type="button" class="btn" id="a-add" disabled>Add advance</button>
+    </div>
+    <p class="msg" id="a-msg" role="status" aria-live="polite"></p>
+    <p class="empty" id="a-empty">No advance added yet.</p>
+    <div class="wrap" id="a-wrap" hidden>
+      <table id="a-table">
+        <thead><tr><th>Date</th><th class="num">Amount</th><th></th></tr></thead>
+        <tbody id="a-body"></tbody>
+        <tfoot><tr><td>Total advance</td><td class="num" id="a-total"></td><td></td></tr></tfoot>
+      </table>
+    </div>
+  </details>
+
+  <details class="card" id="rem">
+    <summary>Remaining payment (बाकी पेमंट) <span class="muted" id="rem-sum"></span></summary>
+    <div class="advform">
+      
+      <div><label class="lbl" for="r-amt">Amount (Rs.)</label><input type="number" id="r-amt" min="1" step="1" inputmode="numeric"></div>
+      <button type="button" class="btn" id="r-save" disabled>Save remaining</button>
+    </div>
+    <p class="msg" id="r-msg" role="status" aria-live="polite"></p>
+    <button type="button" class="btn ghost" id="r-clear" hidden>Remove remaining payment</button>
+  </details>
+
+  <section class="card" aria-labelledby="billh">
+    <h2 id="billh">Bill</h2>
+    <dl class="bill-list">
+      <div><dt>Half days</dt><dd id="b-half"></dd></div>
+      <div><dt>Full days</dt><dd id="b-full"></dd></div>
+      <div><dt>Total bill</dt><dd id="b-total"></dd></div>
+      <div><dt>Remaining payment</dt><dd id="b-rem"></dd></div>
+      <div><dt>Advance paid</dt><dd id="b-adv"></dd></div>
+      <div class="total"><dt>Final payment</dt><dd id="b-bal"></dd></div>
+    </dl>
+    <button type="button" class="btn" id="pdf">Create PDF</button>
+    <p class="msg" id="pdfmsg" role="status" aria-live="polite"></p>
+  </section>
+
+  <section class="card" aria-labelledby="wah">
+    <h2 id="wah">Send to WhatsApp</h2>
+    <label class="lbl" for="phone">WhatsApp number <span class="muted">(country code first, digits only)</span></label>
+    <input type="tel" id="phone" inputmode="numeric" autocomplete="tel" placeholder="For example: 919876543210">
+    <a class="wa" id="wa" target="_blank" rel="noopener">Send all entries on WhatsApp</a>
+    <p class="msg" id="wamsg" role="status" aria-live="polite"></p>
+  </section>
+</main>
+<dialog id="editdlg" aria-labelledby="eh">
+  <h2 id="eh">Update entry</h2>
+  <label class="lbl" for="e-date">Date</label>
+  <input type="date" id="e-date">
+  <label class="lbl" for="e-loc">Location of duty</label>
+  <input type="text" id="e-loc" maxlength="80" autocomplete="off" placeholder="For example: Nandu Bhavan">
+  <p class="msg" id="e-msg" role="status" aria-live="polite"></p>
+  <div class="dlg-actions">
+    <button type="button" class="btn ghost" id="e-no">Cancel</button>
+    <button type="button" class="btn" id="e-yes">Update</button>
+  </div>
+</dialog>
+<dialog id="confirm" aria-labelledby="cq">
+  <p id="cq"></p>
+  <div class="dlg-actions">
+    <button type="button" class="btn ghost" id="c-no">Cancel</button>
+    <button type="button" class="btn danger" id="c-yes">Delete</button>
+  </div>
+</dialog>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script>
+(function(){
+  var KEY = 'dutyEntries';
+  var entries = load();
+  var dateEl = document.getElementById('date');
+  var msgEl = document.getElementById('msg');
+  var phoneEl = document.getElementById('phone');
+  var waEl = document.getElementById('wa');
+  var waMsg = document.getElementById('wamsg');
+  var nameEl = document.getElementById('name');
+  var locInput = document.getElementById('loc');
+  var saveBtn = document.querySelector('#form .btn');
+  var rHalf = document.getElementById('r-half');
+  var rFull = document.getElementById('r-full');
+  var rates = loadRates();
+  var pendingFlash = null;
+  var advances = loadAdv();
+  var remaining = loadRem();
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function load(){
+    try {
+      var raw = localStorage.getItem(KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(arr)) return [];
+      return arr.map(function(e, i){ if (e && !e.id) e.id = uid() + i; return e; }).filter(function(e){
+        return e && /^\d{4}-\d{2}-\d{2}$/.test(e.date) && (e.type === 'full' || e.type === 'half');
+      });
+    } catch (err) { return []; }
+  }
+  function save(){
+    try { localStorage.setItem(KEY, JSON.stringify(entries)); return true; }
+    catch (err) { return false; }
+  }
+  function loadRates(){
+    try {
+      var r = JSON.parse(localStorage.getItem('dutyRates'));
+      if (r && r.half >= 0 && r.full >= 0) return {half: +r.half, full: +r.full};
+    } catch (err) {}
+    return {half: 500, full: 800};
+  }
+  function money(n){ return (n < 0 ? '-' : '') + 'Rs.' + Math.abs(n).toLocaleString('en-IN'); }
+  function esc(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function toDate(iso){
+    var p = iso.split('-');
+    return new Date(+p[0], +p[1] - 1, +p[2]);
+  }
+  function fmt(iso){
+    return toDate(iso).toLocaleDateString('en-GB', {day:'2-digit', month:'short', year:'numeric'});
+  }
+  function fmtNum(iso){
+    var p = iso.split('-');
+    return p[2] + '/' + p[1] + '/' + p[0];
+  }
+  function weekday(iso){
+    return toDate(iso).toLocaleDateString('en-GB', {weekday:'long'});
+  }
+  function today(){
+    var t = new Date(), m = String(t.getMonth() + 1).padStart(2, '0'), d = String(t.getDate()).padStart(2, '0');
+    return t.getFullYear() + '-' + m + '-' + d;
+  }
+  function render(){
+    var sorted = entries.slice();
+    var full = sorted.filter(function(e){ return e.type === 'full'; }).length;
+    var half = sorted.length - full;
+    var total = full + half;
+    document.getElementById('s-total').textContent = total;
+    var amtH = half * rates.half, amtF = full * rates.full;
+    document.getElementById('b-half').textContent = half + ' × ' + money(rates.half) + ' = ' + money(amtH);
+    document.getElementById('b-full').textContent = full + ' × ' + money(rates.full) + ' = ' + money(amtF);
+    document.getElementById('b-total').textContent = money(amtH + amtF);
+    var adv = advTotal();
+    document.getElementById('b-adv').textContent = adv ? '- ' + money(adv) : money(0);
+    document.getElementById('b-rem').textContent = remaining.amount ? '+ ' + money(remaining.amount) : money(0);
+    document.getElementById('b-bal').textContent = money(amtH + amtF + remaining.amount - adv);
+    document.getElementById('s-full').textContent = full;
+    document.getElementById('s-half').textContent = half;
+    document.getElementById('empty').hidden = sorted.length > 0;
+    document.getElementById('table').hidden = sorted.length === 0;
+    document.getElementById('body').innerHTML = sorted.map(function(e){
+      var label = e.type === 'full' ? 'Full day' : 'Half day';
+      return '<tr class="' + e.type + '" data-id="' + e.id + '"><td>' + fmtNum(e.date) + '</td>' +
+        
+        '<td class="loc-cell">' + (typeof e.location === 'string' && e.location ? esc(e.location) : '<span class="muted">–</span>') + '</td>' +
+        '<td class="num">' + (e.type === 'half' ? '<span class="badge half">1</span>' : '') + '</td>' +
+        '<td class="num">' + (e.type === 'full' ? '<span class="badge full">1</span>' : '') + '</td>' +
+        '<td><div class="acts"><button class="ed" type="button" data-edit="' + e.id + '" aria-label="Edit ' + fmt(e.date) + '">&#9998;</button><button class="del" type="button" data-id="' + e.id + '" aria-label="Remove ' + fmt(e.date) + '">&#10005;</button></div></td></tr>';
+    }).join('');
+    updateWa();
+    if (pendingFlash) { var d = pendingFlash; pendingFlash = null; flash(d); }
+    renderAdv();
+    renderRem();
+  }
+
+  function buildText(){
+    var sorted = entries.slice();
+    var full = sorted.filter(function(e){ return e.type === 'full'; }).length;
+    var half = sorted.length - full;
+    var lines = [nameEl.value.trim() ? 'Duty log: ' + nameEl.value.trim() : 'Duty log', 'Full days: ' + full + ', half days: ' + half + ', total: ' + (full + half) + ' days', ''];
+    sorted.forEach(function(e){
+      lines.push(fmt(e.date) + ' (' + weekday(e.date) + '): ' + (e.type === 'full' ? 'Full day' : 'Half day') +
+        (typeof e.location === 'string' && e.location ? ', ' + e.location : ''));
+    });
+    lines.push('', 'Bill: ' + half + ' × ' + money(rates.half) + ' + ' + full + ' × ' + money(rates.full) + ' = ' + money(half * rates.half + full * rates.full));
+    if (advances.length || remaining.amount > 0) {
+      var tb = half * rates.half + full * rates.full, ad = advTotal();
+      if (remaining.amount > 0) lines.push('Remaining payment' + (remLabel() ? ' (' + remLabel() + ')' : '') + ': + ' + money(remaining.amount));
+      if (advances.length) lines.push('Advance paid: - ' + money(ad));
+      lines.push('Final payment: ' + money(tb + remaining.amount - ad));
+    }
+    return lines.join('\n');
+  }
+  function updateWa(){
+    var digits = phoneEl.value.replace(/\D/g, '');
+    var bad = digits && (digits.length < 8 || digits.length > 15);
+    
+    
+    waEl.href = 'https://wa.me/' + (bad ? '' : digits) + '?text=' + encodeURIComponent(buildText());
+    waEl.setAttribute('aria-disabled', 'false');
+    waMsg.textContent = bad ? 'That number looks incomplete, so you can pick the contact in WhatsApp. Add the country code to send to this number directly.' : '';
+  }
+  function onRates(){
+    var h = parseFloat(rHalf.value), f = parseFloat(rFull.value);
+    if (h >= 0) rates.half = h;
+    if (f >= 0) rates.full = f;
+    try { localStorage.setItem('dutyRates', JSON.stringify(rates)); } catch (err) {}
+    render();
+  }
+  [rHalf, rFull].forEach(function(el){
+    el.addEventListener('input', onRates);
+    el.addEventListener('change', function(){ rHalf.value = rates.half; rFull.value = rates.full; });
+  });
+  var setDlg = document.getElementById('settings');
+  document.getElementById('open-set').addEventListener('click', function(){ if (setDlg.showModal) { setDlg.showModal(); } else { setDlg.setAttribute('open', ''); } });
+  document.getElementById('s-done').addEventListener('click', function(){
+    rHalf.value = rates.half; rFull.value = rates.full;
+    if (setDlg.close) { setDlg.close(); } else { setDlg.removeAttribute('open'); }
+  });
+  function flash(date){
+    var row = document.querySelector('#body tr[data-id="' + date + '"]');
+    if (!row) return;
+    var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    row.scrollIntoView({behavior: calm ? 'auto' : 'smooth', block: 'center'});
+    setTimeout(function(){
+      row.classList.add('flash');
+      setTimeout(function(){ row.classList.remove('flash'); }, 2000);
+    }, calm ? 0 : 350);
+  }
+  function pdfFile(){
+    var J = window.jspdf.jsPDF;
+    var doc = new J({unit: 'mm', format: 'a4'});
+    var W = doc.internal.pageSize.getWidth();
+    var sorted = entries.slice();
+    var full = sorted.filter(function(e){ return e.type === 'full'; }).length;
+    var half = sorted.length - full;
+    var amtH = half * rates.half, amtF = full * rates.full;
+    var name = nameEl.value.trim();
+    doc.setFillColor(31, 58, 95);
+    doc.rect(0, 0, W, 26, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.text(name ? 'Name: ' + name : 'Name: ____________________', W / 2, 17, {align: 'center'});
+    doc.autoTable({
+      startY: 34,
+      head: [['Date', 'Location', 'Half Day', 'Full Day']],
+      body: sorted.map(function(e){ return [fmtNum(e.date), e.location || '-', e.type === 'half' ? '1' : '', e.type === 'full' ? '1' : '']; }),
+      headStyles: {fillColor: [31, 58, 95], textColor: 255},
+      styles: {fontSize: 11, cellPadding: 3, textColor: [23, 35, 59]},
+      columnStyles: {0: {fontStyle: 'bold'}, 2: {fontStyle: 'bold'}, 3: {fontStyle: 'bold'}},
+      didParseCell: function(d){
+        if (d.column.index > 1) d.cell.styles.halign = 'center';
+        if (d.section === 'body') d.cell.styles.fillColor = sorted[d.row.index].type === 'half' ? [253, 240, 216] : [217, 242, 238];
+      }
+    });
+    if (advances.length) {
+      var ay = doc.lastAutoTable.finalY + 10;
+      if (ay > 260) { doc.addPage(); ay = 20; }
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(13);
+      doc.setTextColor(31, 58, 95);
+      doc.text('Advance amount', 14, ay);
+      doc.autoTable({
+        startY: ay + 3,
+        head: [['Date', 'Amount']],
+        body: advances.map(function(a){ return [fmtNum(a.date), money(a.amount)]; }),
+        foot: [['Total advance', money(advTotal())]],
+        headStyles: {fillColor: [31, 58, 95], textColor: 255},
+        footStyles: {fillColor: [231, 236, 243], textColor: [23, 35, 59], fontStyle: 'bold'},
+        styles: {fontSize: 11, cellPadding: 3, textColor: [23, 35, 59]},
+        didParseCell: function(d){ if (d.column.index === 1) d.cell.styles.halign = 'right'; }
+      });
+    }
+    var y = doc.lastAutoTable.finalY + 10;
+    if (y > 195) { doc.addPage(); y = 20; }
+    doc.setDrawColor(15, 118, 110);
+    doc.setLineWidth(0.6);
+    doc.roundedRect(14, y, W - 28, 78, 3, 3, 'S');
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    doc.setTextColor(23, 35, 59);
+    doc.text('Half Days: ' + half + '  (' + half + ' x ' + money(rates.half) + ' = ' + money(amtH) + ')', 20, y + 11);
+    doc.text('Full Days: ' + full + '  (' + full + ' x ' + money(rates.full) + ' = ' + money(amtF) + ')', 20, y + 20);
+    doc.text('Total Payment: ' + money(amtH + amtF), 20, y + 29);
+    doc.text('Advance: - ' + money(advTotal()), 20, y + 38);
+    doc.text(money(amtH + amtF) + ' - ' + money(advTotal()) + ' = ' + money(amtH + amtF - advTotal()), 20, y + 47);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(15, 118, 110);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    doc.setTextColor(23, 35, 59);
+    doc.text(money(amtH + amtF - advTotal()) + ' + ' + money(remaining.amount) + ' (Remaining Payment)', 20, y + 58);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(15, 118, 110);
+    doc.text('Final Payment = ' + money(amtH + amtF + remaining.amount - advTotal()), 20, y + 68);
+    return doc;
+  }
+  document.getElementById('pdf').addEventListener('click', async function(){
+    var pm = document.getElementById('pdfmsg');
+    if (!entries.length) { pm.textContent = 'Save at least one duty to create a PDF.'; return; }
+    if (!(window.jspdf && window.jspdf.jsPDF)) { pm.textContent = 'The PDF tool could not load. Check the internet connection and try again.'; return; }
+    try {
+      var dl = (window.claude && window.claude.use) ? await window.claude.use('downloads') : null;
+      
+      var slug = (nameEl.value.trim() || 'duty').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'duty';
+      var fname = slug + '-duty-log-' + today() + '.pdf';
+      if (dl) { await dl.save({filename: fname, data: pdfFile().output('blob')}); } else { pdfFile().save(fname); }
+      pm.textContent = 'PDF file created.';
+    } catch (err) {
+      pm.textContent = err && err.code === 'declined' ? 'PDF not saved.' : 'Couldn’t create the PDF. Try again.';
+    }
+  });
+  function updateWho(){
+    var n = nameEl.value.trim(), w = document.getElementById('who');
+    w.textContent = n;
+    w.hidden = !n;
+  }
+  function updateSave(){ saveBtn.disabled = !locInput.value.trim(); }
+  locInput.addEventListener('input', updateSave);
+  locInput.addEventListener('change', updateSave);
+  nameEl.addEventListener('input', function(){
+    try { localStorage.setItem('dutyName', nameEl.value.trim()); } catch (err) {}
+    updateWho();
+    updateWa();
+  });
+  phoneEl.addEventListener('input', function(){
+    try { localStorage.setItem('dutyPhone', phoneEl.value.trim()); } catch (err) {}
+    updateWa();
+  });
+
+  var editing = null;
+  var edDlg = document.getElementById('editdlg');
+  var eDate = document.getElementById('e-date');
+  var eLoc = document.getElementById('e-loc');
+  var eMsg = document.getElementById('e-msg');
+  var eYes = document.getElementById('e-yes');
+  function eCheck(){ eYes.disabled = !eLoc.value.trim() || !eDate.value; }
+  function closeEdit(){
+    editing = null;
+    if (edDlg.close) { edDlg.close(); } else { edDlg.removeAttribute('open'); }
+  }
+  eLoc.addEventListener('input', eCheck);
+  eDate.addEventListener('input', eCheck);
+  document.getElementById('e-no').addEventListener('click', closeEdit);
+  edDlg.addEventListener('cancel', function(){ editing = null; });
+  document.getElementById('body').addEventListener('click', function(ev){
+    var b = ev.target.closest('.ed');
+    if (!b) return;
+    var cur = entries.filter(function(e){ return e.id === b.getAttribute('data-edit'); })[0];
+    if (!cur) return;
+    editing = cur.id;
+    eDate.value = cur.date;
+    eLoc.value = cur.location || '';
+    eMsg.textContent = '';
+    eCheck();
+    if (edDlg.showModal) { edDlg.showModal(); } else { edDlg.setAttribute('open', ''); }
+  });
+  eYes.addEventListener('click', function(){
+    var cur = entries.filter(function(e){ return e.id === editing; })[0];
+    var nd = eDate.value, nl = eLoc.value.trim();
+    if (!cur || !nd || !nl) return;
+    var others = entries.filter(function(e){ return e.date === nd && e.id !== cur.id; });
+    if (cur.type === 'full' ? others.length > 0 : (others.some(function(e){ return e.type === 'full'; }) || others.length >= 2)) {
+      eMsg.textContent = 'That date can’t take this entry. A date can have one full day or up to two half days.';
+      return;
+    }
+    cur.date = nd;
+    cur.location = nl;
+    save();
+    closeEdit();
+    msgEl.textContent = 'Updated entry for ' + fmtNum(nd) + '.';
+    pendingFlash = cur.id;
+    render();
+  });
+
+  var aDate = document.getElementById('a-date');
+  var aAmt = document.getElementById('a-amt');
+  var aAdd = document.getElementById('a-add');
+  var aMsg = document.getElementById('a-msg');
+  function loadAdv(){
+    try {
+      var a = JSON.parse(localStorage.getItem('dutyAdvances'));
+      if (!Array.isArray(a)) return [];
+      return a.filter(function(x){ return x && /^\d{4}-\d{2}-\d{2}$/.test(x.date) && x.amount > 0; }).map(function(x, i){ if (!x.id) x.id = uid() + i; return x; });
+    } catch (err) { return []; }
+  }
+  function saveAdv(){
+    try { localStorage.setItem('dutyAdvances', JSON.stringify(advances)); return true; }
+    catch (err) { return false; }
+  }
+  function advTotal(){ return advances.reduce(function(s, a){ return s + a.amount; }, 0); }
+  function renderAdv(){
+    document.getElementById('a-empty').hidden = advances.length > 0;
+    document.getElementById('a-wrap').hidden = advances.length === 0;
+    document.getElementById('a-body').innerHTML = advances.map(function(a){
+      return '<tr><td>' + fmtNum(a.date) + '</td><td class="num">' + money(a.amount) + '</td><td><button class="del" type="button" data-adv="' + a.id + '" aria-label="Remove advance of ' + money(a.amount) + '">&#10005;</button></td></tr>';
+    }).join('');
+    document.getElementById('a-total').textContent = money(advTotal());
+    document.getElementById('adv-sum').textContent = advances.length ? '· ' + money(advTotal()) : '';
+  }
+  function aCheck(){ aAdd.disabled = !(parseFloat(aAmt.value) > 0) || !aDate.value; }
+  aAmt.addEventListener('input', aCheck);
+  aDate.addEventListener('input', aCheck);
+  aAdd.addEventListener('click', function(){
+    var amt = parseFloat(aAmt.value);
+    if (!(amt > 0) || !aDate.value) return;
+    advances.push({id: uid(), date: aDate.value, amount: amt});
+    var ok = saveAdv();
+    aMsg.textContent = 'Added advance ' + money(amt) + ' on ' + fmtNum(aDate.value) + '.' + (ok ? '' : ' Couldn’t store it in this browser, so it will be lost on refresh.');
+    aAmt.value = '';
+    aCheck();
+    render();
+  });
+  document.getElementById('a-body').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-adv]');
+    if (!b) return;
+    var a = advances.filter(function(x){ return x.id === b.getAttribute('data-adv'); })[0];
+    if (!a) return;
+    pending = a.id;
+    pendingKind = 'adv';
+    document.getElementById('cq').textContent = 'Delete the advance of ' + money(a.amount) + ' on ' + fmtNum(a.date) + '?';
+    openConfirm();
+  });
+  aDate.value = today();
+  
+  var rAmt = document.getElementById('r-amt');
+  var rSave = document.getElementById('r-save');
+  var rMsg = document.getElementById('r-msg');
+  function loadRem(){
+    try {
+      var r = JSON.parse(localStorage.getItem('dutyRemaining'));
+      if (r && r.amount > 0) return {amount: +r.amount, month: typeof r.month === 'string' ? r.month : ''};
+    } catch (err) {}
+    return {amount: 0, month: ''};
+  }
+  function saveRem(){
+    try { localStorage.setItem('dutyRemaining', JSON.stringify(remaining)); return true; }
+    catch (err) { return false; }
+  }
+  function remLabel(){ return ''; }
+  function renderRem(){
+    document.getElementById('rem-sum').textContent = remaining.amount ? '· ' + money(remaining.amount) : '';
+    document.getElementById('r-clear').hidden = !remaining.amount;
+  }
+  function rCheck(){ rSave.disabled = !(parseFloat(rAmt.value) > 0); }
+  rAmt.addEventListener('input', rCheck);
+  rSave.addEventListener('click', function(){
+    var amt = parseFloat(rAmt.value);
+    if (!(amt > 0)) return;
+    remaining = {amount: amt, month: ''};
+    var ok = saveRem();
+    rMsg.textContent = 'Remaining payment ' + money(amt) + (remaining.month ? ' (' + remaining.month + ')' : '') + ' added to Final Payment.' + (ok ? '' : ' Couldn’t store it in this browser, so it will be lost on refresh.');
+    render();
+  });
+  document.getElementById('r-clear').addEventListener('click', function(){
+    pending = 'rem';
+    pendingKind = 'rem';
+    document.getElementById('cq').textContent = 'Remove the remaining payment of ' + money(remaining.amount) + '?';
+    openConfirm();
+  });
+  rAmt.value = remaining.amount || '';
+  
+  rCheck();
+
+  document.getElementById('form').addEventListener('submit', function(ev){
+    ev.preventDefault();
+    var date = dateEl.value;
+    if (!date) { msgEl.textContent = 'Select a date first.'; dateEl.focus(); return; }
+    var locEl = document.getElementById('loc');
+    if (!locEl.value.trim()) { msgEl.textContent = 'Enter the location of duty before saving.'; locEl.focus(); return; }
+    var type = document.querySelector('input[name="type"]:checked').value;
+    var label = type === 'full' ? 'full day' : 'half day';
+    var same = entries.filter(function(e){ return e.date === date; });
+    var idx = -1;
+    if (type === 'full' && same.length) { msgEl.textContent = 'That date already has an entry. Delete or update it first.'; return; }
+    if (type === 'half' && same.some(function(e){ return e.type === 'full'; })) { msgEl.textContent = 'That date already has a full day. Delete it first to add a half day.'; return; }
+    if (type === 'half' && same.length >= 2) { msgEl.textContent = 'That date already has two half days.'; return; }
+    var place = document.getElementById('loc').value.trim();
+    var nid = uid();
+    entries.push({id: nid, date: date, type: type, location: place});
+    var ok = save();
+    pendingFlash = nid;
+    msgEl.textContent = (idx >= 0 ? 'Updated ' : 'Saved ') + fmt(date) + ' as ' + label + (place ? ' at ' + place : '') + '.' +
+      (ok ? '' : ' Couldn’t store it in this browser, so it will be lost on refresh.');
+    render();
+  });
+
+  var pending = null;
+  var pendingKind = '';
+  var dlg = document.getElementById('confirm');
+  function openConfirm(){ if (dlg.showModal) { dlg.showModal(); } else { dlg.setAttribute('open', ''); } }
+  function closeConfirm(){ if (dlg.close) { dlg.close(); } else { dlg.removeAttribute('open'); } }
+  document.getElementById('c-no').addEventListener('click', function(){ pending = null; closeConfirm(); });
+  dlg.addEventListener('cancel', function(){ pending = null; });
+  document.getElementById('body').addEventListener('click', function(ev){
+    var btn = ev.target.closest('.del');
+    if (!btn) return;
+    pending = btn.getAttribute('data-id');
+    pendingKind = '';
+    var ent = entries.filter(function(e){ return e.id === pending; })[0];
+    document.getElementById('cq').textContent = 'Delete the duty entry for ' + (ent ? fmtNum(ent.date) : 'this date') + '?';
+    openConfirm();
+  });
+  document.getElementById('c-yes').addEventListener('click', function(){
+    var date = pending;
+    if (date && pendingKind === 'rem') {
+      pending = null;
+      pendingKind = '';
+      closeConfirm();
+      remaining = {amount: 0, month: ''};
+      saveRem();
+      rAmt.value = '';
+      
+      rCheck();
+      rMsg.textContent = 'Remaining payment removed.';
+      render();
+      return;
+    }
+    if (date && pendingKind === 'adv') {
+      pending = null;
+      pendingKind = '';
+      closeConfirm();
+      advances = advances.filter(function(a){ return a.id !== date; });
+      saveAdv();
+      aMsg.textContent = 'Advance removed.';
+      render();
+      return;
+    }
+    if (!date) return;
+    pending = null;
+    closeConfirm();
+    var gone = entries.filter(function(e){ return e.id === date; })[0];
+    entries = entries.filter(function(e){ return e.id !== date; });
+    save();
+    msgEl.textContent = 'Removed ' + (gone ? fmtNum(gone.date) : 'entry') + '.';
+    render();
+  });
+
+  dateEl.value = today();
+  try { phoneEl.value = localStorage.getItem('dutyPhone') || ''; } catch (err) {}
+  try { nameEl.value = localStorage.getItem('dutyName') || ''; } catch (err) {}
+  updateWho();
+  updateSave();
+  rHalf.value = rates.half;
+  rFull.value = rates.full;
+  render();
+})();
+</script>
+</body>
+</html>
